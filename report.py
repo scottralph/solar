@@ -54,6 +54,81 @@ def _xray_label(flux: float | None) -> str:
     return "X-class (very high)"
 
 
+def _bz_label(bz: float | None) -> str:
+    if bz is None:
+        return "unknown"
+    if bz >= 5:
+        return f"{bz:+.1f} nT (northward — no coupling)"
+    if bz >= 0:
+        return f"{bz:+.1f} nT (weakly northward)"
+    if bz >= -5:
+        return f"{bz:+.1f} nT (weakly southward — minor enhancement possible)"
+    if bz >= -10:
+        return f"{bz:+.1f} nT (moderately southward — active conditions likely)"
+    if bz >= -20:
+        return f"{bz:+.1f} nT (strongly southward — G1-G2 storm likely)"
+    return f"{bz:+.1f} nT (intense southward — major storm)"
+
+
+def _wind_assessment(speed: float | None, bz: float | None, density: float | None) -> str:
+    """Assess whether solar wind conditions are geoeffective."""
+    if speed is None:
+        return "Solar wind speed unavailable — cannot assess."
+
+    # Speed classification
+    if speed >= 800:
+        speed_note = f"Solar wind extremely fast ({speed:.0f} km/s — CME-level)."
+        speed_risk = 3
+    elif speed >= 600:
+        speed_note = f"Solar wind very fast ({speed:.0f} km/s)."
+        speed_risk = 2
+    elif speed >= 500:
+        speed_note = f"Solar wind fast ({speed:.0f} km/s)."
+        speed_risk = 1
+    elif speed >= 400:
+        speed_note = f"Solar wind moderate ({speed:.0f} km/s)."
+        speed_risk = 0
+    else:
+        speed_note = f"Solar wind slow ({speed:.0f} km/s)."
+        speed_risk = 0
+
+    # Bz coupling risk
+    if bz is None:
+        bz_note = "IMF Bz unknown — coupling efficiency uncertain."
+        bz_risk = 0
+    elif bz <= -10:
+        bz_note = f"Bz strongly southward ({bz:+.1f} nT) — strong geomagnetic coupling."
+        bz_risk = 3
+    elif bz <= -5:
+        bz_note = f"Bz moderately southward ({bz:+.1f} nT) — enhanced coupling."
+        bz_risk = 2
+    elif bz <= 0:
+        bz_note = f"Bz weakly southward ({bz:+.1f} nT) — low-level coupling."
+        bz_risk = 1
+    else:
+        bz_note = f"Bz northward ({bz:+.1f} nT) — minimal magnetospheric coupling."
+        bz_risk = 0
+
+    total_risk = speed_risk + bz_risk
+
+    if total_risk >= 5:
+        verdict = "STORM-LEVEL RISK — severe HF disruption and polar path blackout likely."
+    elif total_risk >= 3:
+        verdict = "ELEVATED RISK — geomagnetic storming probable; expect HF degradation on high-latitude paths."
+    elif total_risk >= 2:
+        verdict = "MODERATE RISK — active conditions possible; monitor Kp."
+    elif total_risk >= 1:
+        verdict = "LOW RISK — conditions unsettled but significant disruption unlikely."
+    else:
+        verdict = "MINIMAL RISK — solar wind geoeffective impact unlikely."
+
+    parts = [speed_note, bz_note, verdict]
+    if density is not None and density >= 15:
+        parts.insert(2, f"High proton density ({density:.1f} p/cm³) amplifies storm potential.")
+
+    return "  ".join(parts)
+
+
 def _dst_label(dst: str | None) -> str:
     if dst is None:
         return "unknown"
@@ -111,6 +186,7 @@ def build(noaa: dict, swcom: dict, swlive: dict) -> str:
     sf = noaa.get("solar_flux", {})
     kp = noaa.get("kp_index", {})
     wind = noaa.get("solar_wind", {})
+    imf = noaa.get("imf", {})
     xray = noaa.get("xray_flux", {})
     swl = swlive
 
@@ -135,9 +211,18 @@ def build(noaa: dict, swcom: dict, swlive: dict) -> str:
     # Solar wind
     spd = wind.get("proton_speed")
     den = wind.get("proton_density")
-    src = wind.get("source", "")
-    row("Solar wind speed:", f"{spd} km/s  [{src}]" if spd else "n/a")
-    row("Solar wind density:", f"{den} p/cm³" if den else "n/a")
+    src = wind.get("source") or imf.get("source", "")
+    row("Solar wind speed:", f"{spd:.0f} km/s  [{src}]" if spd else "n/a")
+    row("Solar wind density:", f"{den:.2f} p/cm³" if den else "n/a")
+
+    # IMF
+    bz = imf.get("bz_gsm")
+    bt = imf.get("bt")
+    by = imf.get("by_gsm")
+    row("IMF Bz (GSM):", _bz_label(bz))
+    if bt is not None:
+        by_str = f"  By={by:+.1f} nT" if by is not None else ""
+        row("IMF Bt (total):", f"{bt:.1f} nT{by_str}")
 
     # DST
     row("DST index:", _dst_label(swl.get("dst_index")))
@@ -170,6 +255,16 @@ def build(noaa: dict, swcom: dict, swlive: dict) -> str:
         lines.append(f"  {line}")
     lines.append("")
     for line in textwrap.wrap(geo_note, 58):
+        lines.append(f"  {line}")
+
+    # Solar wind / IMF assessment
+    wind_note = _wind_assessment(
+        spd,
+        imf.get("bz_gsm") if not isinstance(imf, dict) or "error" not in imf else None,
+        den,
+    )
+    lines.append("")
+    for line in textwrap.wrap(wind_note, 58):
         lines.append(f"  {line}")
 
     past = wwv.get("past_24h")

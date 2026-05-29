@@ -83,13 +83,28 @@ def fetch_xray_flux() -> dict:
 
 
 def fetch_solar_wind() -> dict:
-    """Return latest real-time solar wind data (ACE/DSCOVR)."""
+    """Return latest real-time solar wind plasma data (ACE/DSCOVR)."""
     records = _get_json("/json/rtsw/rtsw_wind_1m.json")
     latest = records[-1] if records else {}
     return {
         "time_tag": latest.get("time_tag"),
         "proton_speed": latest.get("proton_speed"),
         "proton_density": latest.get("proton_density"),
+        "proton_temperature": latest.get("proton_temperature"),
+        "source": latest.get("source"),
+    }
+
+
+def fetch_imf() -> dict:
+    """Return latest interplanetary magnetic field data (ACE/DSCOVR)."""
+    records = _get_json("/json/rtsw/rtsw_mag_1m.json")
+    latest = records[-1] if records else {}
+    return {
+        "time_tag": latest.get("time_tag"),
+        "bt": latest.get("bt"),
+        "bz_gsm": latest.get("bz_gsm"),
+        "by_gsm": latest.get("by_gsm"),
+        "bx_gsm": latest.get("bx_gsm"),
         "source": latest.get("source"),
     }
 
@@ -165,6 +180,7 @@ def fetch_all() -> dict:
         "solar_flux": fetch_solar_flux,
         "xray_flux": fetch_xray_flux,
         "solar_wind": fetch_solar_wind,
+        "imf": fetch_imf,
         "flare_probabilities": fetch_flare_probabilities,
         "forecast_3day": fetch_3day_forecast,
         "alerts": fetch_alerts,
