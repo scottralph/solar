@@ -40,6 +40,16 @@ python main.py | less
 python main.py > forecast.txt
 ```
 
+## Claude Code slash command
+
+If you use [Claude Code](https://claude.ai/code), a `/solar` slash command is included. Open this project in Claude Code and type:
+
+```
+/solar
+```
+
+Claude will run the forecast and display the full report inline. The command is defined in `.claude/commands/solar.md` and works out of the box — no extra setup needed beyond the normal installation above.
+
 ## What the report contains
 
 - **Current conditions** — SFI, Kp, A-index, X-ray flux class, solar wind speed/density, IMF Bz/Bt/By with 30-minute trend detection, DST index
