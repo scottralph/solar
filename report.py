@@ -188,7 +188,7 @@ def build(noaa: dict, swcom: dict, swlive: dict) -> str:
     wind = noaa.get("solar_wind", {})
     imf = noaa.get("imf", {})
     xray = noaa.get("xray_flux", {})
-    swl = swlive
+    swl = swlive.get("dashboard", swlive)  # support old flat dict or new nested
 
     sfi_val = sf.get("flux") or wwv.get("solar_flux")
     sfi_mean = sf.get("ninety_day_mean")
@@ -324,6 +324,30 @@ def build(noaa: dict, swcom: dict, swlive: dict) -> str:
         section("SPACEWEATHER.COM HEADLINE")
         for line in textwrap.wrap(headline, 58):
             lines.append(f"  {line}")
+
+    # ── Forecast Discussion ─────────────────────────────────────────────────
+    discussion = swlive.get("forecast_discussion", {})
+    disc_text = discussion.get("text", "") if isinstance(discussion, dict) else ""
+    def _render_discussion(text: str) -> None:
+        for para in text.split("\n\n"):
+            para = para.strip()
+            if not para:
+                continue
+            if para.startswith("### "):
+                lines.append(f"  -- {para[4:].upper()} --")
+            else:
+                for line in textwrap.wrap(para, 58):
+                    lines.append(f"  {line}")
+            lines.append("")
+
+    if disc_text and "error" not in discussion:
+        issue_time = discussion.get("issue_time", "")
+        header = "FORECAST DISCUSSION"
+        if issue_time:
+            header += f"  ({issue_time})"
+        section(header)
+        _render_discussion(disc_text)
+
 
     # ── Footer ──────────────────────────────────────────────────────────────
     lines.append("")
