@@ -48,7 +48,7 @@ If you use [Claude Code](https://claude.ai/code), a `/solar` slash command is in
 /solar
 ```
 
-Claude will run the forecast and display the full report inline. The skill is defined in `.claude/skills/solar/SKILL.md` and works out of the box — no extra setup needed beyond the normal installation above.
+Claude will run the forecast and display the full report inline. The command is defined in `.claude/commands/solar.md` and works out of the box — no extra setup needed beyond the normal installation above.
 
 ## What the report contains
 
