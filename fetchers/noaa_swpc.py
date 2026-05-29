@@ -40,11 +40,24 @@ def fetch_wwv() -> dict:
         m = re.search(pat, text, re.IGNORECASE)
         data[key] = int(m.group(1)) if m else None
 
-    m = re.search(r"Space weather for the past 24 hours has been (.+?)\.", text, re.IGNORECASE)
-    data["past_24h"] = m.group(1).strip() if m else None
+    # Capture everything from the "past 24 hours" sentence to the blank line
+    # that precedes the next-24h block (may be multiple sentences).
+    m = re.search(
+        r"Space weather for the past 24 hours has been (.+?)(?=\n\n|\Z)",
+        text, re.IGNORECASE | re.DOTALL
+    )
+    data["past_24h"] = " ".join(m.group(1).split()) if m else None
 
-    m = re.search(r"Space weather for the next 24 hours is predicted to be (.+?)\.", text, re.IGNORECASE)
-    data["next_24h"] = m.group(1).strip() if m else None
+    # Next-24h phrasing varies: "predicted to be X" or "No storms predicted…"
+    m = re.search(
+        r"(?:Space weather for the next 24 hours is predicted to be (.+?)"
+        r"|No space weather storms are predicted for the next 24 hours\.?)",
+        text, re.IGNORECASE | re.DOTALL
+    )
+    if m:
+        data["next_24h"] = m.group(1).strip() if m.group(1) else "No storms predicted"
+    else:
+        data["next_24h"] = None
 
     return data
 
