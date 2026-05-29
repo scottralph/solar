@@ -341,10 +341,24 @@ def build(noaa: dict, swcom: dict, swlive: dict) -> str:
     else:
         lines.append("  (unavailable)")
 
-    # Spaceweatherlive Kp range
-    kp_range = swl.get("kp_forecast_range")
-    if kp_range:
-        lines.append(f"\n  SWLive Kp range seen: {', '.join(kp_range)}")
+    # ── Solar Wind & Geospace Forecast (from discussion) ────────────────────
+    disc = swlive.get("forecast_discussion", {})
+    secs = disc.get("sections", {}) if isinstance(disc, dict) else {}
+
+    wind_fc = secs.get("solar wind", {}).get("forecast", "")
+    geo_fc  = secs.get("geospace",   {}).get("forecast", "")
+
+    if wind_fc or geo_fc:
+        section("SOLAR WIND & GEOSPACE FORECAST (3-DAY)")
+        if wind_fc:
+            lines.append("  Solar Wind:")
+            for line in textwrap.wrap(wind_fc, 56):
+                lines.append(f"    {line}")
+            lines.append("")
+        if geo_fc:
+            lines.append("  Geospace / Geomagnetic:")
+            for line in textwrap.wrap(geo_fc, 56):
+                lines.append(f"    {line}")
 
     # ── Active Alerts ───────────────────────────────────────────────────────
     alerts = noaa.get("alerts", [])

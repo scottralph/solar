@@ -105,6 +105,31 @@ def _extract_body(text: str, start_marker: str) -> str:
     return "\n\n".join(s for s in segments if s).strip()
 
 
+def _parse_sections(body: str) -> dict[str, dict[str, str]]:
+    """Split a discussion body into {section: {'summary': ..., 'forecast': ...}}."""
+    paragraphs = body.split("\n\n")
+    sections: dict[str, dict[str, str]] = {}
+    current_section = ""
+    current_sub = ""
+    for para in paragraphs:
+        para = para.strip()
+        if para.startswith("### "):
+            label = para[4:].strip().lower()
+            if label == "forecast":
+                current_sub = "forecast"
+            elif label in ("24 h summary",):
+                current_sub = "summary"
+            else:
+                current_section = label
+                current_sub = "summary"
+                sections.setdefault(current_section, {})
+        elif current_section and para:
+            bucket = sections.setdefault(current_section, {})
+            existing = bucket.get(current_sub, "")
+            bucket[current_sub] = (existing + " " + para).strip() if existing else para
+    return sections
+
+
 def fetch_forecast_discussion() -> dict:
     """Fetch the NOAA forecast discussion narrative (issued daily)."""
     soup = _get_soup("/en/reports/forecast-discussion.html")
@@ -114,7 +139,11 @@ def fetch_forecast_discussion() -> dict:
     issue_match = re.search(r"(\d{4} \w+ \d{1,2} \d{4} UTC)", body)
     issue_time = issue_match.group(1) if issue_match else None
 
-    return {"issue_time": issue_time, "text": body}
+    return {
+        "issue_time": issue_time,
+        "text": body,
+        "sections": _parse_sections(body),
+    }
 
 
 def fetch_solar_activity_report() -> dict:
