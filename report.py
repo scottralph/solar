@@ -219,7 +219,11 @@ def build(noaa: dict, swcom: dict, swlive: dict) -> str:
     bz = imf.get("bz_gsm")
     bt = imf.get("bt")
     by = imf.get("by_gsm")
-    row("IMF Bz (GSM):", _bz_label(bz))
+    bz_trend = imf.get("bz_trend")
+    bz_str = _bz_label(bz)
+    if bz_trend:
+        bz_str += f",  {bz_trend}"
+    row("IMF Bz (GSM):", bz_str)
     if bt is not None:
         by_str = f"  By={by:+.1f} nT" if by is not None else ""
         row("IMF Bt (total):", f"{bt:.1f} nT{by_str}")
@@ -264,14 +268,15 @@ def build(noaa: dict, swcom: dict, swlive: dict) -> str:
         _note("Kp index unavailable.")
 
     # IMF Bz
+    trend_suffix = f"  ({bz_trend})" if bz_trend else ""
     if bz_n is not None and bz_n <= -10:
-        _note(f"IMF Bz is strongly southward ({bz_n:+.1f} nT) — active geomagnetic coupling underway; storm conditions likely developing.")
+        _note(f"IMF Bz strongly southward ({bz_n:+.1f} nT){trend_suffix} — active geomagnetic coupling underway; storm conditions likely developing.")
     elif bz_n is not None and bz_n <= -5:
-        _note(f"IMF Bz is moderately southward ({bz_n:+.1f} nT) — enhanced magnetospheric coupling; watch for Kp rise.")
+        _note(f"IMF Bz moderately southward ({bz_n:+.1f} nT){trend_suffix} — enhanced magnetospheric coupling; watch for Kp rise.")
     elif bz_n is not None and bz_n < 0:
-        _note(f"IMF Bz weakly southward ({bz_n:+.1f} nT) — minor coupling; conditions stable for now.")
+        _note(f"IMF Bz weakly southward ({bz_n:+.1f} nT){trend_suffix} — minor coupling; conditions stable for now.")
     elif bz_n is not None:
-        _note(f"IMF Bz northward ({bz_n:+.1f} nT) — no significant magnetospheric coupling; favourable.")
+        _note(f"IMF Bz northward ({bz_n:+.1f} nT){trend_suffix} — no significant magnetospheric coupling; favourable.")
     else:
         _note("IMF Bz unavailable.")
 

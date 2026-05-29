@@ -109,9 +109,24 @@ def fetch_solar_wind() -> dict:
 
 
 def fetch_imf() -> dict:
-    """Return latest interplanetary magnetic field data (ACE/DSCOVR)."""
+    """Return latest IMF data plus a Bz trend over the past 30 minutes."""
     records = _get_json("/json/rtsw/rtsw_mag_1m.json")
     latest = records[-1] if records else {}
+
+    # Bz trend: compare mean of oldest 15 vs newest 15 of the last 30 records.
+    recent = [
+        r["bz_gsm"] for r in records[-30:]
+        if r.get("bz_gsm") is not None
+    ]
+    bz_trend: str | None = None
+    if len(recent) >= 20:
+        old_mean = sum(recent[:15]) / 15
+        new_mean = sum(recent[-15:]) / 15
+        delta = new_mean - old_mean
+        if abs(delta) >= 2.0:
+            direction = "northward" if delta > 0 else "southward"
+            bz_trend = f"trending {direction} ({delta:+.1f} nT over 30 min)"
+
     return {
         "time_tag": latest.get("time_tag"),
         "bt": latest.get("bt"),
@@ -119,6 +134,7 @@ def fetch_imf() -> dict:
         "by_gsm": latest.get("by_gsm"),
         "bx_gsm": latest.get("bx_gsm"),
         "source": latest.get("source"),
+        "bz_trend": bz_trend,
     }
 
 
