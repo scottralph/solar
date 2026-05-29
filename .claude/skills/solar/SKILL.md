@@ -1,5 +1,6 @@
 ---
-description: Run the solar HF radio condition forecast
+name: solar
+description: Run the solar HF radio condition forecast and display the full report
 allowed-tools: [Bash]
 ---
 
