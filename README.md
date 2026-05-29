@@ -103,7 +103,7 @@ For the full underlying data (current conditions, Kp table, event probabilities,
 python3 main.py
 ```
 
-See the [Example output](#example-output-solar) section below for a sample.
+See the [Example output](#example-output----solar) section below for a sample.
 
 ## Data sources
 
@@ -164,7 +164,7 @@ Both work out of the box — no extra setup needed beyond the normal installatio
 - **Active alerts** — any current NOAA watches, warnings, or alerts
 - **Forecast discussion** — full NOAA forecaster narrative covering solar activity, energetic particles, solar wind, and geospace sections
 
-## Example output — `/solar` {#example-output-solar}
+## Example output — `/solar`
 
 Generated 2026-05-29 covering the 30–31 May weekend:
 
