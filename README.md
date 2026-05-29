@@ -2,6 +2,109 @@
 
 A command-line tool that generates a 2–3 day HF radio propagation forecast by gathering real-time and forecast data from three public space weather sources.
 
+## Primary usage — `/two-day-outlook`
+
+The main entry point is the Claude Code slash command `/two-day-outlook`. It fetches fresh solar data and produces a plain-English, day-by-day operating forecast for the next two days — band conditions, Kp by UT slot, solar wind drivers, Bz outlook, flare risk, and key watch points.
+
+Open this project in [Claude Code](https://claude.ai/code) and type:
+
+```
+/two-day-outlook
+```
+
+### Example output
+
+Generated 2026-05-29, covering 30–31 May:
+
+```
+30 May
+
+- Solar flux (SFI 106): Fair. 20m and lower bands most reliable; 17m marginal and a
+  stretch on any given path. 15m and above unlikely to be consistently open.
+- Kp: Quiet through the morning — 1.33 in both the 06–09 and 09–12 UT slots, the
+  cleanest part of the day. Rises to 2.67 at 12–15 UT and peaks at 3.00 in both the
+  18–21 and 21–00 UT slots. Geomagnetic field quiet to unsettled all day — no
+  meaningful disruption to mid-latitude paths; polar routes may see minor softening
+  in the evening slots.
+- Solar wind: Weak -CH HSS influences waning through 30 May. A glancing CME (departed
+  Sun 26 May) could arrive at any point during the day — if it does, expect a brief
+  speed enhancement above the current 400–450 km/s baseline. Forecasters characterise
+  the potential effect as minor and short-lived.
+- Bz: No numerical forecast available for 30 May. Bz is currently at -0.1 nT —
+  effectively neutral. If the CME arrives, watch for a transient southward excursion;
+  the trailing edge of the current HSS can also produce variable Bz dips. Nothing
+  alarming is expected, but keep an eye on live feeds if Kp starts climbing
+  unexpectedly.
+- Flare risk: 40% chance of an R1 radio blackout. Regions 4452 (anti-Hale, beta-gamma,
+  approaching the west limb) and 4455 (beta-gamma, rising in the east) are the active
+  sources. A brief sunlit-hemisphere blackout is plausible but not the most likely
+  outcome.
+- Radiation storms: 5% S1 — background, no concern.
+- Overall: A good operating day, particularly in the morning UT window (00–12 UT). The
+  slight Kp rise in the afternoon and evening is minor. The main wildcard is CME arrival
+  timing — if it shows up, conditions should recover within a few hours.
+
+---
+
+31 May
+
+- Solar flux (SFI): No change expected — SFI 106, same fair conditions. Band picture
+  identical to 30 May; 20m and lower the go-to bands.
+- Kp: Starts moderate (3.00 at 00–03 UT) and holds in the 1.67–2.33 range through
+  mid-morning. The step-change comes at 12–15 UT (3.33), accelerating to a peak of 4.00
+  in the 18–21 UT slot, then 3.67 at 21–00 UT. From 15 UT onwards, paths through
+  latitudes above ~50° will feel increasing absorption and auroral degradation. By
+  18–21 UT, polar and transpolar routes are likely significantly impacted; mid-latitude
+  paths on the higher end of the band will also show some softening.
+- Solar wind: The main event of the two-day period. A new -CH HSS onset is expected on
+  31 May, combined with possible glancing influences from slow eruptions that left the
+  Sun on 27–28 May. Wind speed is likely accelerating through the day — probably
+  climbing well above the 450 km/s baseline by late afternoon UT. Sustained elevated
+  wind from multiple drivers raises the risk of prolonged geomagnetic activity.
+- Bz: This is the critical variable to watch on 31 May. HSS arrivals typically produce
+  a period of fluctuating and potentially sustained southward Bz as the stream
+  interaction region passes. A sustained southward excursion to -5 nT or deeper for
+  several hours is what would push Kp to 4+ and potentially trigger a G1 storm. Monitor
+  live Bz closely from 12–15 UT; if it turns and holds southward, deterioration will
+  follow within 1–2 hours.
+- Geomagnetic storm probabilities: With Kp peaking at 4.00 and active conditions
+  described as likely: mid-latitude paths face around 30–40% chance of active conditions
+  and ~10–15% chance of a brief G1 storm; high-latitude paths carry substantially higher
+  risk — meaningful probability of G1 and a real chance of G1–G2 if Bz cooperates with
+  the combined HSS and CME glancing blow.
+- Flare risk: 40% R1 blackout risk — same as 30 May. Regions 4452 and 4455 still the
+  primary candidates.
+- Overall: 31 May morning UT (00–12) is the window to exploit — conditions comparable
+  to 30 May. From 15 UT expect a progressive deterioration; by 18–21 UT plan for active
+  conditions at minimum. An M-class flare on top of geomagnetic activity would be a
+  double hit.
+
+---
+
+KEY WATCH POINTS
+
+1. CME arrival 30 May — the 26 May CME could deliver a glancing blow at any time during
+   30 May; watch live Kp and Bz for a sudden southward dip and Kp jump — recovery
+   expected within a few hours if it arrives.
+2. HSS onset 31 May from ~12–15 UT — the main event; watch ACE/DSCOVR for solar wind
+   speed acceleration and Bz for a sustained southward turn; the 18–21 UT slot (Kp 4.00)
+   is the highest-risk window for path degradation above 50° latitude.
+3. Regions 4452 and 4455 both days — both remain on disk and M-class capable; a
+   significant flare during already-elevated geomagnetic conditions on 31 May would
+   compound the impact — if propagation suddenly drops on the sunlit side, check X-ray
+   flux before assuming it's geomagnetic.
+```
+
+## Raw forecast — `/solar`
+
+For the full underlying data (current conditions, Kp table, event probabilities, full NOAA discussion), use the `/solar` slash command, or run directly:
+
+```bash
+python3 main.py
+```
+
+See the [Example output](#example-output-solar) section below for a sample.
+
 ## Data sources
 
 | Source | Method | Used for |
@@ -40,15 +143,16 @@ python main.py | less
 python main.py > forecast.txt
 ```
 
-## Claude Code slash command
+## Claude Code slash commands
 
-If you use [Claude Code](https://claude.ai/code), a `/solar` slash command is included. Open this project in Claude Code and type:
+Two slash commands are included for use with [Claude Code](https://claude.ai/code):
 
-```
-/solar
-```
+| Command | What it does |
+|---------|-------------|
+| `/two-day-outlook` | **Primary.** Fetches fresh data and produces a day-by-day narrative forecast for the next two days. |
+| `/solar` | Fetches and displays the full raw report — current conditions, Kp table, event probabilities, and forecast discussion. |
 
-Claude will run the forecast and display the full report inline. The command is defined in `.claude/commands/solar.md` and works out of the box — no extra setup needed beyond the normal installation above.
+Both work out of the box — no extra setup needed beyond the normal installation above.
 
 ## What the report contains
 
@@ -60,7 +164,7 @@ Claude will run the forecast and display the full report inline. The command is 
 - **Active alerts** — any current NOAA watches, warnings, or alerts
 - **Forecast discussion** — full NOAA forecaster narrative covering solar activity, energetic particles, solar wind, and geospace sections
 
-## Example output
+## Example output — `/solar` {#example-output-solar}
 
 Generated 2026-05-29 covering the 30–31 May weekend:
 

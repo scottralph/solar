@@ -7,7 +7,7 @@ allowed-tools: [Bash]
 Run the solar radio forecast and display the report:
 
 ```bash
-python main.py
+python3 main.py
 ```
 
 Show the full output. Do not summarise or truncate it.
