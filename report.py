@@ -232,40 +232,80 @@ def build(noaa: dict, swcom: dict, swlive: dict) -> str:
 
     sfi_n = int(sfi_val) if sfi_val else None
     kp_n = float(kp_val) if kp_val is not None else None
+    bz_n = imf.get("bz_gsm") if isinstance(imf, dict) and "error" not in imf else None
 
-    if sfi_n and sfi_n >= 120:
-        hf_note = "HF conditions favourable — elevated solar flux supports higher MUF."
+    def _note(text: str) -> None:
+        for line in textwrap.wrap(text, 58):
+            lines.append(f"  {line}")
+        lines.append("")
+
+    # Solar flux / MUF
+    if sfi_n and sfi_n >= 150:
+        _note(f"Solar flux (SFI {sfi_n}) is excellent — higher HF bands (17m and above) well supported.")
+    elif sfi_n and sfi_n >= 120:
+        _note(f"Solar flux (SFI {sfi_n}) is good — 10m to 15m likely open on favourable paths.")
     elif sfi_n and sfi_n >= 90:
-        hf_note = "HF conditions moderate — typical MUF, seasonal paths likely."
+        _note(f"Solar flux (SFI {sfi_n}) is fair — expect a typical MUF; 20m and lower bands most reliable.")
     elif sfi_n:
-        hf_note = "HF conditions marginal — low solar flux limits higher bands."
+        _note(f"Solar flux (SFI {sfi_n}) is low — higher bands likely closed; stick to 40m and below.")
     else:
-        hf_note = "HF conditions unknown (SFI unavailable)."
+        _note("Solar flux unavailable.")
 
+    # Kp / geomagnetic
     if kp_n is not None and kp_n >= 5:
-        geo_note = f"Geomagnetic storm (Kp {kp_n}) — expect absorption and polar path degradation."
+        _note(f"Kp {kp_n} — geomagnetic storm in progress. Expect ionospheric absorption and degraded or blacked-out polar paths.")
     elif kp_n is not None and kp_n >= 4:
-        geo_note = "Active geomagnetic conditions — higher-latitude paths may be affected."
+        _note(f"Kp {kp_n} — active geomagnetic conditions. Higher-latitude paths (above ~50°) may be disrupted.")
+    elif kp_n is not None and kp_n >= 3:
+        _note(f"Kp {kp_n} — unsettled but manageable. Minor degradation possible on polar routes; mid-latitude paths should be fine.")
     elif kp_n is not None:
-        geo_note = "Geomagnetic conditions quiet to unsettled — no significant path disruption expected."
+        _note(f"Kp {kp_n} — geomagnetic field quiet. No disruption expected.")
     else:
-        geo_note = "Geomagnetic conditions unknown."
+        _note("Kp index unavailable.")
 
-    for line in textwrap.wrap(hf_note, 58):
-        lines.append(f"  {line}")
-    lines.append("")
-    for line in textwrap.wrap(geo_note, 58):
-        lines.append(f"  {line}")
+    # IMF Bz
+    if bz_n is not None and bz_n <= -10:
+        _note(f"IMF Bz is strongly southward ({bz_n:+.1f} nT) — active geomagnetic coupling underway; storm conditions likely developing.")
+    elif bz_n is not None and bz_n <= -5:
+        _note(f"IMF Bz is moderately southward ({bz_n:+.1f} nT) — enhanced magnetospheric coupling; watch for Kp rise.")
+    elif bz_n is not None and bz_n < 0:
+        _note(f"IMF Bz weakly southward ({bz_n:+.1f} nT) — minor coupling; conditions stable for now.")
+    elif bz_n is not None:
+        _note(f"IMF Bz northward ({bz_n:+.1f} nT) — no significant magnetospheric coupling; favourable.")
+    else:
+        _note("IMF Bz unavailable.")
 
-    # Solar wind / IMF assessment
-    wind_note = _wind_assessment(
-        spd,
-        imf.get("bz_gsm") if not isinstance(imf, dict) or "error" not in imf else None,
-        den,
-    )
-    lines.append("")
-    for line in textwrap.wrap(wind_note, 58):
-        lines.append(f"  {line}")
+    # Solar wind speed
+    if spd is not None and spd >= 700:
+        _note(f"Solar wind very fast ({spd:.0f} km/s) — likely CME or strong HSS arrival; elevated storm risk regardless of Bz.")
+    elif spd is not None and spd >= 500:
+        _note(f"Solar wind fast ({spd:.0f} km/s) — elevated; any southward Bz turning would quickly drive geomagnetic activity.")
+    elif spd is not None and spd >= 400:
+        _note(f"Solar wind moderate ({spd:.0f} km/s) — nominal; not a concern on its own.")
+    elif spd is not None:
+        _note(f"Solar wind slow ({spd:.0f} km/s) — quiet background stream.")
+    else:
+        _note("Solar wind speed unavailable.")
+
+    # Solar wind density
+    if den is not None and den >= 20:
+        _note(f"Solar wind density high ({den:.1f} p/cm³) — elevated density amplifies any storm-driving effect from southward Bz.")
+    elif den is not None and den >= 10:
+        _note(f"Solar wind density elevated ({den:.1f} p/cm³) — worth monitoring alongside Bz.")
+    elif den is not None:
+        _note(f"Solar wind density normal ({den:.1f} p/cm³) — no concern.")
+    else:
+        _note("Solar wind density unavailable.")
+
+    # X-ray / flare activity
+    if xflux is not None and xflux >= 1e-4:
+        _note("X-ray flux at X-class level — severe HF radio blackout likely on sunlit side.")
+    elif xflux is not None and xflux >= 1e-5:
+        _note("X-ray flux at M-class level — moderate HF blackout possible on sunlit paths.")
+    elif xflux is not None and xflux >= 1e-6:
+        _note("X-ray flux at C-class level — minor HF degradation possible on sunlit side.")
+    elif xflux is not None:
+        _note("X-ray flux low (A/B class) — no flare-related HF impact.")
 
     past = wwv.get("past_24h")
     nxt = wwv.get("next_24h")
