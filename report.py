@@ -268,7 +268,7 @@ def build(noaa: dict, swcom: dict, swlive: dict) -> str:
         _note("Kp index unavailable.")
 
     # IMF Bz
-    trend_suffix = f"  ({bz_trend})" if bz_trend else ""
+    trend_suffix = f", {bz_trend}" if bz_trend else ""
     if bz_n is not None and bz_n <= -10:
         _note(f"IMF Bz strongly southward ({bz_n:+.1f} nT){trend_suffix} — active geomagnetic coupling underway; storm conditions likely developing.")
     elif bz_n is not None and bz_n <= -5:
