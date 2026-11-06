@@ -6,7 +6,7 @@ allowed-tools: [Bash]
 Run the solar forecast to fetch fresh data:
 
 ```bash
-python3 main.py
+.venv/bin/python main.py
 ```
 
 Using that output, produce a two-day operating forecast. The two days are the second and third days covered by the 3-day Kp forecast table (i.e. tomorrow and the day after).
